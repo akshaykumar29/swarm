@@ -13,7 +13,7 @@ services:
      deploy:
        replicas: 1
      networks:
-         -akshay-manish
+         - akshay-manish
   node:
      image: akshaykumar29/nodpic
      deploy:
@@ -21,5 +21,5 @@ services:
      networks:
        - akshay-manish
 networks:
- akshay-manish
+ akshay-manish:
                                                                        1,1           Top
