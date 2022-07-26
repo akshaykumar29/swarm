@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  swarmpic:
+     image: akshaykumar29/swarmpic
+     ports:
+         - "3089:3089"
+     deploy:
+         replicas: 2
+     networks:
+        - akshay-manish
+  py3:
+     image: akshaykumar29/py3
+     deploy:
+       replicas: 1
+     networks:
+         -akshay-manish
+  node:
+     image: akshaykumar29/nodpic
+     deploy:
+      replicas: 2
+     networks:
+       - akshay-manish
+networks:
+ akshay-manish
+                                                                       1,1           Top
