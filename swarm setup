@@ -1,0 +1,243 @@
+DOCKER SWARM:-
+
+Manager node and worker node are required.
+
+1. Install docker.io on the both master and slave.
+2. Apt update -y 
+3. Install dependency packages.
+
+apt install apt-transport-https ca-certificates curl software-properties-common
+
+4. Add docker key and docker repository to your both servers.
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+&&
+add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+
+5. Update the packages.
+apt-get update
+
+6. Install docker-ce.      (To install docker-ce use local user)
+7. apt install docker-ce
+
+7. Start & Enable the Docker.
+systemctl start docker
+systemctl enable docker
+
+To leave docker swarm node or managar:-
+
+Docker swarm leave —force
+
+
+Create Docker Swarm Cluster on Manager Node:-
+
+docker swarm init --advertise-addr ip-address (ip-addr of manager-node)
+
+* Check the status of the Manager Node.
+
+docker node ls
+
+Add Worker Node to swarm cluster:-
+
+
+* Copy the output of the “swarm init” command from manager node, then paste that output on the Worker Node to join the Swarm Cluster.
+
+docker swarm join --token SWMTKN-1-token-number  manager-ip-address:2377
+
+To recreate docker swarm token:-
+
+Docker swarm join-token manager/worker (acc to needs)
+
+1. To leave worker node:- docker swarm leave  (type in any worker node which you want to leave)
+
+2. To remove node from manager :- docker node rm worker-name
+
+3. To inspect any worker:- docker node inspect worker-name | less
+
+4. Promote of worker node to manager:-  docker node promote worker-name 
+5. Demote:- docker node demote worker-name
+
+Docker-SERVICE:- only run on master
+
+Replica of services:-  even if we delete any woker node , master will automatically create desired state nodes which we mentioned in replicas ex:- if 4 den it would maintain 4 worker node .
+
+Docker service create - - replicas-number(2,3) image name
+
+Docker service create  -d - - replicas 3 alpine ping 13.12.34.1
+ 
+Docker service ps vd  — to view processes
+
+Docker Scale :-If want to increase your repliacs coz of load increases on nodes so it does autoscaling to maintain the load.
+
+Docker service service scale -ID= no of ASG you want
+ex:- docker service scale 9m6q=7
+
+Create WEB server service:-
+
+Docker service create -d -p 8090:80 Nginx    (this service can be accessed on any node IP (worker or master)
+
+Docker swarm visulizer:- to see GUI version of our services running on nodes
+
+docker service create \
+  --name=viz \
+  --publish=8080:8080/tcp \
+  --constraint=node.role==manager \
+  --mount=type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock \
+  dockersamples/visualizer
+
+
+GLOBAL MODE:-
+
+To run a service on each node we define the service mode as global. This service will be running on each node can be seen by docker swarm visulizer.
+
+
+Docker service create mode=global alpine ping 12.1.2.3
+
+Docker Swarm Node Availability:-
+
+1. Active
+2. Pause (No new task would be taken from manager-node)
+3. Drain (during os update we need to shift cont to other nodes and existing cont will be shifted to other nodes)
+ 
+Docker node update - -availablility=pause worker-name 
+
+
+Docker Network:-
+
+Docker network create — driver overlay net29   (overlay is type of net like bridge, ingress, host etc)
+
+Overlay network:-
+By default, All node are connected with bridge network when swarm is not present but we want all the nodes to be communicate with each other then we need overlay network for that..
+Overlay network is created above entire cluster including nodes with the same IP range
+ With this network all node can commute with each other.
+Ingress Network:-
+It has in-built load balancer, It distributes the traffic equally between nodes. It comes by default with swarm.For port exposing we need ingress network(if port is exposed to any outsider)
+
+Create a network(overlay):-  docker network create -d overlay  test  (test named overlay nw is created)
+
+Attach service to it:-
+
+Docker service create -d —network test Nginx:1.13-alpine
+To Launch web service in Docker Swarm:-
+* On Manager Node,run the following command to deploy a web server (nginx) service.
+
+For example:
+
+docker service create --name web-server -p 80:80 nginx:1.13-alpine
+
+* Check the docker service.
+docker service ls
+
+Replicas and Scaling the service:-
+
+* Run the following command to make 2 replicas of the web-server service so that it is accessible on the manager and worker node.
+
+docker service scale web-server=2
+
+* Check the status of web server service.
+
+docker service ps web-server
+
+
+* Check the status of running docker services.
+docker service ls
+
+
+Test the Docker Swarm:-
+
+* Open Nginx web page using manager & Worker Node Ip-address on Browser.
+In Manager-Node.
+
+Docker Stack:- 
+
+Docker stack deploy -c docker-compose.yml teststack
+
+Docker stack ls 
+
+Docker container ls 
+
+Deploy docker services using docker swarm:-
+
+1. Create a docker-compose.yml file 
+2. Vim docker-compose.yml
+
+version: "3"
+services:
+  consumer:
+    image: javainuse/employee-consumer
+    networks:
+      - consumer-producer
+    depends_on:
+      - producer
+
+  producer:
+    image: javainuse/employee-producer
+    ports:
+      - "8080:8080"
+    networks:
+      - consumer-producer
+
+networks:
+  consumer-producer:
+
+3. docker network create -d overlay producer-consumer  (create an overlay NW)
+
+4. Docker stack deploy -c docker-compose.yml docstack 
+5. Now it will deploy all the service mentioned in compose.yml, can check by 
+
+Docker container ls (In slave node), Container will be created in nodes and are in running status.
+ 
+
+
+Note:- we can’t use docker-compose for deploying multiple service  on various nodes coz docker-compose is only used for 1 host machine(node).We use  docker stack for deployment on various 
+
+
+
+Deploy docker swarm services using docker stack:-
+
+1. Login to ply-with-docker and create 2 nodes
+2. Configure docker swarm 
+Docker swarm init —advertise-addr 192.168.1.1
+3. Now configure node2 as a slave by pasting the docker swarm join command
+4. Create a docker-compose.yml file but will use image from docker hub not local server. 
+version: "3"
+services:
+  consumer:
+    image: javainuse/employee-consumer
+    networks:
+      - consumer-producer
+    depends_on:
+      - producer
+
+  producer:
+    image: javainuse/employee-producer
+    ports:
+      - "8080:8080"
+    networks:
+      - consumer-producer
+
+Note:- We have  added an overlay network above to provide communication between 2 nodes
+We can also use command(docker network create -d overlay producer-consumer) to provide communication between nodes.
+
+NOTE:- docker stack command does not build images before deploying.
+
+5. Now, deploy the docker stack 
+Docker stack deploy -c docker-compose.yml teststack
+6. Docker stack ls
+7. We check created container 
+Docker container ls
+As we can employee-consumer container has created on manager node and employee-producer has created on node2
+
+So, 2 service has deployed by stack  1 on manager and another on slave node2
+
+Lets check logs of container (manager and node)
+
+Docker container logs Cont ID ex:-  docker container logs 2ib
+
+Note:- docker swarm provides self healing if any container stops it will start it again.
+
+Lets stop the container
+Docker container stop 2id (it will stop the container but if we do docker container ls, we can see that it starts it again)
+
+
+
